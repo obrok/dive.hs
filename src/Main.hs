@@ -29,11 +29,19 @@ display stateRef = do
 render (State (Character x y) (Mobs mobs)) = do
   red
   creature x y
+  forM_ mobs renderMob
+
+renderMob (Mob x y Alive) = do
+  green
+  creature x y
+renderMob (Mob x y Dead) = return ()
 
 creature x y =
   quad (fromIntegral x / 100) (fromIntegral (x + 1) / 100) (fromIntegral y / 100) (fromIntegral (y + 1) / 100)
 
 red = color3f 1 0 0
+
+green = color3f 0 1 0
 
 color3f r g b= color $ Color3 r g (b :: GLfloat)
 

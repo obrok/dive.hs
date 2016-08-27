@@ -7,9 +7,11 @@ data Character = Character Int Int
 
 data Mobs = Mobs [Mob]
 
-data Mob = Mob Int Int
+data Mob = Mob Int Int Status
 
-initialState = State (Character 0 0) (Mobs [Mob 10 10])
+data Status = Alive | Dead
+
+initialState = State (Character 0 0) (Mobs [Mob 10 10 Alive])
 
 updateState key state = nextState key state state
 
@@ -21,7 +23,11 @@ instance UpdateOnInput State where
     State (nextState key state character) (nextState key state mobs)
 
 instance UpdateOnInput Mobs where
-  nextState _ _ = id
+  nextState k s (Mobs mobs) = Mobs $ map (nextState k s) mobs
+
+instance UpdateOnInput Mob where
+  nextState _ (State (Character x1 y1) _) (Mob x2 y2 Alive) | x1 == y2 && x2 == y2 = Mob x2 y2 Dead
+  nextState _ _ mob = mob
 
 instance UpdateOnInput Character where
   nextState (SpecialKey KeyUp) _ (Character x y) = Character x (y + 1)
