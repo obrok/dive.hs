@@ -1,5 +1,6 @@
 import Graphics.UI.GLUT
 import Data.IORef
+import Control.Monad
 
 data State = State Integer Integer
   deriving (Show)
@@ -26,10 +27,22 @@ input state key keyState modifiers position = do
   x <- get state
   postRedisplay Nothing
 
+renderable (State x y) =
+  [
+    [x, y, 0],
+    [x + 10, y + 10, 1]
+  ]
+
+quad :: GLfloat -> GLfloat -> GLfloat -> GLfloat -> IO ()
+quad x1 x2 y1 y2 =
+  renderPrimitive Polygon $ do
+    mapM_ (\[x, y] -> vertex $ Vertex3 x y 0) points
+  where points = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]
+
 display :: IORef State -> DisplayCallback
-display state = do
+display stateRef = do
   clear [ ColorBuffer ]
-  State x y <- get state
-  renderPrimitive Points $ do
-    vertex $ Vertex3 (fromIntegral x / 100) (fromIntegral y / 100) (0 :: GLfloat)
+  state <- get stateRef
+  forM_ (renderable state) (\[x, y, color] ->
+    quad (fromIntegral x / 100) (fromIntegral x / 100 + 0.05) (fromIntegral y / 100) (fromIntegral y / 100 + 0.05))
   flush
