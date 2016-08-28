@@ -26,7 +26,7 @@ instance UpdateOnInput Mobs where
   nextState k s (Mobs mobs) = Mobs $ map (nextState k s) mobs
 
 instance UpdateOnInput Mob where
-  nextState _ (State (Character x1 y1) _) (Mob x2 y2 Alive) | x1 == y2 && x2 == y2 = Mob x2 y2 Dead
+  nextState _ (State (Character x1 y1) _) (Mob x2 y2 Alive) | x1 == x2 && y1 == y2 = Mob x2 y2 Dead
   nextState _ _ mob = mob
 
 instance UpdateOnInput Character where
