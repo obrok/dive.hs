@@ -7,6 +7,7 @@ main :: IO ()
 main = do
   (_progName, _args) <- getArgsAndInitialize
   _window <- createWindow "dive"
+  fullScreen
   state <- newIORef $ initialState
   displayCallback $= display state
   keyboardMouseCallback $= Just (input state)
@@ -47,6 +48,6 @@ color3f r g b= color $ Color3 r g (b :: GLfloat)
 
 quad :: GLfloat -> GLfloat -> GLfloat -> GLfloat -> IO ()
 quad x1 x2 y1 y2 =
-  renderPrimitive Polygon $ do
+  renderPrimitive Quads $ do
     mapM_ (\[x, y] -> vertex $ Vertex2 x y) points
   where points = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]
