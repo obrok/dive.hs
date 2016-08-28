@@ -14,9 +14,8 @@ main = do
   mainLoop
 
 input :: IORef State -> KeyboardMouseCallback
-input state key Up modifiers position = do
+input state key Down modifiers position = do
   state $~ updateState key
-  x <- get state
   postRedisplay Nothing
 input _ _ _ _ _ = return ()
 
