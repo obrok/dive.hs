@@ -11,8 +11,10 @@ data Mob = Mob Int Int Status
 
 data Status = Alive | Dead
 
+initialState :: State
 initialState = State (Character 0 0) (Mobs [Mob 10 10 Alive])
 
+updateState :: Key -> State -> State
 updateState key state = nextState key state state
 
 class UpdateOnInput a where

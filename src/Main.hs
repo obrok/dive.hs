@@ -9,9 +9,11 @@ main = do
   _window <- createWindow "dive"
   fullScreen
   state <- newIORef $ initialState
-  displayCallback $= display state
+  displayCallback $= display state tileSize
   keyboardMouseCallback $= Just (input state)
   mainLoop
+
+tileSize = 24
 
 input :: IORef State -> KeyboardMouseCallback
 input state key Down modifiers position = do
@@ -19,11 +21,14 @@ input state key Down modifiers position = do
   postRedisplay Nothing
 input _ _ _ _ _ = return ()
 
-display :: IORef State -> DisplayCallback
-display stateRef = do
+display :: IORef State -> GLsizei -> DisplayCallback
+display stateRef tileSize = do
   clear [ ColorBuffer ]
   state <- get stateRef
-  render state
+  Size x y <- get windowSize
+  preservingMatrix $ do
+    ortho2D 0 (fromIntegral $ x `div` tileSize) 0 (fromIntegral $ y `div` tileSize)
+    render state
   flush
 
 render (State (Character x y) (Mobs mobs)) = do
@@ -37,7 +42,7 @@ renderMob (Mob x y Alive) = do
 renderMob (Mob x y Dead) = return ()
 
 creature x y =
-  quad (fromIntegral x / 100) (fromIntegral (x + 1) / 100) (fromIntegral y / 100) (fromIntegral (y + 1) / 100)
+  quad (fromIntegral x) (fromIntegral (x + 1)) (fromIntegral y) (fromIntegral (y + 1))
 
 red = color3f 1 0 0
 
