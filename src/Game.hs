@@ -17,6 +17,10 @@ initialState = State (Character 0 0) (Mobs [Mob 10 10 Alive])
 updateState :: Key -> State -> State
 updateState key state = nextState key state state
 
+character (State character _) = character
+
+mobs (State _ (Mobs mobs)) = mobs
+
 class UpdateOnInput a where
   nextState :: Key -> State -> a -> a
 

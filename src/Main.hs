@@ -3,6 +3,8 @@ import Data.IORef
 import Control.Monad
 import Game
 
+data Drawable = Drawable Int Int (Color3 GLfloat)
+
 main :: IO ()
 main = do
   (_progName, _args) <- getArgsAndInitialize
@@ -31,24 +33,25 @@ display stateRef tileSize = do
     render state
   flush
 
-render (State (Character x y) (Mobs mobs)) = do
-  red
-  creature x y
-  forM_ mobs renderMob
+render state = do
+  forM_ (drawables state) draw
 
-renderMob (Mob x y Alive) = do
-  green
-  creature x y
-renderMob (Mob x y Dead) = return ()
+draw (Drawable x y c) = do
+  color c
+  tile x y
 
-creature x y =
+drawables state = charDrawable : mobDrawables
+  where charDrawable = Drawable characterX characterY green
+        Character characterX characterY = character state
+        mobDrawables = map mobDrawable (mobs state)
+        mobDrawable (Mob x y _) = Drawable x y red
+
+tile x y =
   quad (fromIntegral x) (fromIntegral (x + 1)) (fromIntegral y) (fromIntegral (y + 1))
 
-red = color3f 1 0 0
+red = Color3 1 0 0
 
-green = color3f 0 1 0
-
-color3f r g b= color $ Color3 r g (b :: GLfloat)
+green = Color3 0 1 0
 
 quad :: GLfloat -> GLfloat -> GLfloat -> GLfloat -> IO ()
 quad x1 x2 y1 y2 =
