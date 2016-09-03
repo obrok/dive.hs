@@ -10,7 +10,7 @@ main = do
   (_progName, _args) <- getArgsAndInitialize
   _window <- createWindow "dive"
   fullScreen
-  state <- newIORef $ initialState
+  state <- newIORef initialState
   displayCallback $= display state tileSize
   keyboardMouseCallback $= Just (input state)
   mainLoop
@@ -33,8 +33,7 @@ display stateRef tileSize = do
     render state
   flush
 
-render state = do
-  forM_ (drawables state) draw
+render state = forM_ (drawables state) draw
 
 draw (Drawable x y c) = do
   color c
@@ -55,6 +54,6 @@ green = Color3 0 1 0
 
 quad :: GLfloat -> GLfloat -> GLfloat -> GLfloat -> IO ()
 quad x1 x2 y1 y2 =
-  renderPrimitive Quads $ do
+  renderPrimitive Quads $
     mapM_ (\[x, y] -> vertex $ Vertex2 x y) points
   where points = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]
