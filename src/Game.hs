@@ -1,8 +1,6 @@
 module Game where
 import Graphics.UI.GLUT
 
-data State = State Character Mobs
-
 data Character = Character Int Int
 
 data Mobs = Mobs [Mob]
@@ -11,6 +9,8 @@ data Mob = Mob Int Int Status
 
 data Status = Alive | Dead
 
+data State = State { character :: Character, mobs :: Mobs }
+
 initialState :: State
 initialState = State (Character 0 0) (Mobs [Mob 10 10 Alive])
 
@@ -18,10 +18,10 @@ updateState :: Key -> State -> State
 updateState key state = nextState key state state
 
 getCharacter :: State -> Character
-getCharacter (State character _) = character
+getCharacter State { character } = character
 
 getMobs :: State -> [Mob]
-getMobs (State _ (Mobs mobs)) = mobs
+getMobs State { mobs = Mobs ms } = ms
 
 class UpdateOnInput a where
   nextState :: Key -> State -> a -> a
