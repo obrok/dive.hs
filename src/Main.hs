@@ -11,20 +11,21 @@ main = do
   _window <- createWindow "dive"
   fullScreen
   state <- newIORef initialState
-  displayCallback $= display state tileSize
+  displayCallback $= display state
   keyboardMouseCallback $= Just (input state)
   mainLoop
 
+tileSize :: GLsizei
 tileSize = 24
 
 input :: IORef State -> KeyboardMouseCallback
-input state key Down modifiers position = do
+input state key Down _modifiers _position = do
   state $~ updateState key
   postRedisplay Nothing
 input _ _ _ _ _ = return ()
 
-display :: IORef State -> GLsizei -> DisplayCallback
-display stateRef tileSize = do
+display :: IORef State -> DisplayCallback
+display stateRef = do
   clear [ ColorBuffer ]
   state <- get stateRef
   Size x y <- get windowSize
@@ -33,23 +34,29 @@ display stateRef tileSize = do
     render state
   flush
 
+render :: State -> IO ()
 render state = forM_ (drawables state) draw
 
+draw :: Drawable -> IO ()
 draw (Drawable x y c) = do
   color c
   tile x y
 
+drawables :: State -> [Drawable]
 drawables state = charDrawable : mobDrawables
   where charDrawable = Drawable characterX characterY green
-        Character characterX characterY = character state
-        mobDrawables = map mobDrawable (mobs state)
+        Character characterX characterY = getCharacter state
+        mobDrawables = map mobDrawable (getMobs state)
         mobDrawable (Mob x y _) = Drawable x y red
 
+tile :: Int -> Int -> IO ()
 tile x y =
   quad (fromIntegral x) (fromIntegral (x + 1)) (fromIntegral y) (fromIntegral (y + 1))
 
+red :: Color3 GLfloat
 red = Color3 1 0 0
 
+green :: Color3 GLfloat
 green = Color3 0 1 0
 
 quad :: GLfloat -> GLfloat -> GLfloat -> GLfloat -> IO ()
