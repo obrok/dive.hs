@@ -2,6 +2,7 @@ import Graphics.UI.GLUT
 import Data.IORef
 import Control.Monad
 import Game
+import Paths_dive_hs (getDataFileName)
 
 data Drawable = Drawable Int Int (Color3 GLfloat)
 
@@ -9,6 +10,8 @@ main :: IO ()
 main = do
   (_progName, _args) <- getArgsAndInitialize
   _window <- createWindow "dive"
+  path <- getDataFileName "texture_quad.frag"
+  print path
   fullScreen
   state <- newIORef initialState
   displayCallback $= display state
