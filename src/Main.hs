@@ -1,4 +1,5 @@
 import Graphics.UI.GLUT
+import Graphics.GLUtil.JuicyTextures (readTexture)
 import Data.IORef
 import Control.Monad
 import Game
@@ -10,8 +11,9 @@ main :: IO ()
 main = do
   (_progName, _args) <- getArgsAndInitialize
   _window <- createWindow "dive"
-  path <- getDataFileName "texture_quad.frag"
-  print path
+  path <- getDataFileName "res/dude.png"
+  aTexture <- readTexture path
+  print aTexture
   fullScreen
   state <- newIORef initialState
   displayCallback $= display state

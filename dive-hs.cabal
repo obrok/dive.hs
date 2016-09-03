@@ -14,7 +14,8 @@ category:            Game
 build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
-data-files:          src/shaders/*.frag
+data-files:          src/shaders/*.frag,
+                     res/*.png
 
 executable dive-hs
   main-is:             Main.hs
