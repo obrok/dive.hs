@@ -3,17 +3,41 @@ import Graphics.GLUtil.JuicyTextures (readTexture)
 import Data.IORef
 import Control.Monad
 import Game
+import DisplayMode
 import Paths_dive_hs (getDataFileName)
 
 data Drawable = Drawable Int Int (Color3 GLfloat)
 
 main :: IO ()
 main = do
-  (_progName, _args) <- getArgsAndInitialize
+  setDisplayMode
+  (_progName, args) <- getArgsAndInitialize
   _window <- createWindow "dive"
+  print args
+
+  profiles <- contextProfile
+  print profiles
+
   path <- getDataFileName "res/dude.png"
-  aTexture <- readTexture path
-  print aTexture
+  Right dudeTexture <- readTexture path
+  print dudeTexture
+
+  texture Texture2D $= Enabled
+  activeTexture $= TextureUnit 0
+  textureBinding Texture2D $= Just dudeTexture
+
+  shaderPath <- getDataFileName "src/shaders/texture_quad.frag"
+  contents <- readFile shaderPath
+  print (packUtf8 contents)
+  shader <- createShader FragmentShader
+  shaderSourceBS shader $= packUtf8 contents
+  compileShader shader
+  status <- compileStatus shader
+  infoLog <- shaderInfoLog shader
+  print infoLog
+  print status
+  print shader
+
   fullScreen
   state <- newIORef initialState
   displayCallback $= display state
@@ -62,7 +86,7 @@ red :: Color3 GLfloat
 red = Color3 1 0 0
 
 green :: Color3 GLfloat
-green = Color3 0 1 0
+green = Color3 0 0 1
 
 quad :: GLfloat -> GLfloat -> GLfloat -> GLfloat -> IO ()
 quad x1 x2 y1 y2 =
