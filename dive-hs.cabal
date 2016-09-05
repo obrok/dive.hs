@@ -22,13 +22,10 @@ executable dive-hs
   other-modules:       Paths_dive_hs
   -- other-extensions:    
   build-depends:       base >=4.8 && <4.9,
-                       GLUT >= 2.7 && <2.8,
                        GLUtil >= 0.9 && <0.10,
-                       inline-c >= 0.5 && <0.6
+                       GLFW >= 0.5 && <0.6,
+                       OpenGL >= 3.0 && <3.1
   hs-source-dirs:      src
-  c-sources:           src/DisplayMode.c
-  cc-options:          -Wall -Wno-deprecated-declarations -O2
-  ld-options:          -framework GLUT
   default-language:    Haskell2010
-  ghc-options:         -Wall -Werror
+  ghc-options:         -Wall
   default-extensions:  NamedFieldPuns

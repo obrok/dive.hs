@@ -1,4 +1,4 @@
-#version 150 core
+#version 120
 
 in vec2 uv;
 uniform sampler2D tex;

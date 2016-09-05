@@ -1,5 +1,6 @@
 module Game where
-import Graphics.UI.GLUT
+
+import Graphics.UI.GLFW
 
 data Character = Character Int Int
 
@@ -38,8 +39,8 @@ instance UpdateOnInput Mob where
   nextState _ _ mob = mob
 
 instance UpdateOnInput Character where
-  nextState (SpecialKey KeyUp) _ (Character x y) = Character x (y + 1)
-  nextState (SpecialKey KeyDown) _ (Character x y) = Character x (y - 1)
-  nextState (SpecialKey KeyRight) _ (Character x y) = Character (x + 1) y
-  nextState (SpecialKey KeyLeft) _ (Character x y) = Character (x - 1) y
+  nextState (SpecialKey UP) _ (Character x y) = Character x (y + 1)
+  nextState (SpecialKey DOWN) _ (Character x y) = Character x (y - 1)
+  nextState (SpecialKey LEFT) _ (Character x y) = Character (x + 1) y
+  nextState (SpecialKey RIGHT) _ (Character x y) = Character (x - 1) y
   nextState _ _ x = x

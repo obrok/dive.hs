@@ -1,22 +1,22 @@
-import Graphics.UI.GLUT
 import Graphics.GLUtil.JuicyTextures (readTexture)
+import Graphics.UI.GLFW as GLFW
+import Graphics.Rendering.OpenGL
 import Data.IORef
 import Control.Monad
 import Game
-import DisplayMode
 import Paths_dive_hs (getDataFileName)
 
 data Drawable = Drawable Int Int (Color3 GLfloat)
 
 main :: IO ()
 main = do
-  setDisplayMode
-  (_progName, args) <- getArgsAndInitialize
-  _window <- createWindow "dive"
-  print args
-
-  profiles <- contextProfile
-  print profiles
+  result <- GLFW.initialize
+  VideoMode{videoWidth, videoHeight} <- get desktopMode
+  version <- get GLFW.version
+  print version
+  print result
+  window <- GLFW.openWindow (Size (fromIntegral videoWidth) (fromIntegral videoHeight)) [GLFW.DisplayAlphaBits 8] GLFW.Window
+  print window
 
   path <- getDataFileName "res/dude.png"
   Right dudeTexture <- readTexture path
@@ -38,30 +38,29 @@ main = do
   print status
   print shader
 
-  fullScreen
-  state <- newIORef initialState
-  displayCallback $= display state
-  keyboardMouseCallback $= Just (input state)
-  mainLoop
+  -- state <- newIORef initialState
+  -- displayCallback $= display state
+  -- keyboardMouseCallback $= Just (input state)
+  -- mainLoop
 
 tileSize :: GLsizei
 tileSize = 24
 
-input :: IORef State -> KeyboardMouseCallback
-input state key Down _modifiers _position = do
-  state $~ updateState key
-  postRedisplay Nothing
-input _ _ _ _ _ = return ()
+-- input :: IORef State -> KeyboardMouseCallback
+-- input state key Down _modifiers _position = do
+--   state $~ updateState key
+--   postRedisplay Nothing
+-- input _ _ _ _ _ = return ()
 
-display :: IORef State -> DisplayCallback
-display stateRef = do
-  clear [ ColorBuffer ]
-  state <- get stateRef
-  Size x y <- get windowSize
-  preservingMatrix $ do
-    ortho2D 0 (fromIntegral $ x `div` tileSize) 0 (fromIntegral $ y `div` tileSize)
-    render state
-  flush
+-- display :: IORef State -> DisplayCallback
+-- display stateRef = do
+--   clear [ ColorBuffer ]
+--   state <- get stateRef
+--   Size x y <- get windowSize
+--   preservingMatrix $ do
+--     ortho2D 0 (fromIntegral $ x `div` tileSize) 0 (fromIntegral $ y `div` tileSize)
+--     render state
+--   flush
 
 render :: State -> IO ()
 render state = forM_ (drawables state) draw
