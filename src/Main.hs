@@ -41,29 +41,33 @@ main = do
   compileStatus shader >>= print
   shaderInfoLog shader >>= print
 
-  -- state <- newIORef initialState
-  -- displayCallback $= display state
-  -- keyboardMouseCallback $= Just (input state)
-  -- mainLoop
+  state <- newIORef initialState
+  setKeyCallback window $ Just (input state)
+  mainLoop window state
 
-tileSize :: GLsizei
+mainLoop window state = do
+  get state >>= print
+  display window state
+  GLFW.waitEvents
+  mainLoop window state
+
+tileSize :: Int
 tileSize = 24
 
--- input :: IORef State -> KeyboardMouseCallback
--- input state key Down _modifiers _position = do
---   state $~ updateState key
---   postRedisplay Nothing
--- input _ _ _ _ _ = return ()
+input :: IORef State -> KeyCallback
+input state window key _someInt KeyState'Released _modifiers =
+  state $~ updateState key
+input _ _ _ _ _ _ = return ()
 
--- display :: IORef State -> DisplayCallback
--- display stateRef = do
---   clear [ ColorBuffer ]
---   state <- get stateRef
---   Size x y <- get windowSize
---   preservingMatrix $ do
---     ortho2D 0 (fromIntegral $ x `div` tileSize) 0 (fromIntegral $ y `div` tileSize)
---     render state
---   flush
+display :: Window -> IORef State -> IO ()
+display window stateRef = do
+  clear [ ColorBuffer ]
+  state <- get stateRef
+  (x, y) <- GLFW.getWindowSize window
+  preservingMatrix $ do
+    ortho2D 0 (fromIntegral $ x `div` tileSize) 0 (fromIntegral $ y `div` tileSize)
+    render state
+  flush
 
 render :: State -> IO ()
 render state = forM_ (drawables state) draw

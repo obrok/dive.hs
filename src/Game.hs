@@ -3,14 +3,19 @@ module Game where
 import Graphics.UI.GLFW
 
 data Character = Character Int Int
+  deriving (Show)
 
 data Mobs = Mobs [Mob]
+  deriving (Show)
 
 data Mob = Mob Int Int Status
+  deriving (Show)
 
 data Status = Alive | Dead
+  deriving (Show)
 
 data State = State { character :: Character, mobs :: Mobs }
+  deriving (Show)
 
 initialState :: State
 initialState = State (Character 0 0) (Mobs [Mob 10 10 Alive])
