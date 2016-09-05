@@ -10,13 +10,18 @@ data Drawable = Drawable Int Int (Color3 GLfloat)
 
 main :: IO ()
 main = do
-  result <- GLFW.initialize
-  VideoMode{videoWidth, videoHeight} <- get desktopMode
-  version <- get GLFW.version
-  print version
-  print result
-  window <- GLFW.openWindow (Size (fromIntegral videoWidth) (fromIntegral videoHeight)) [GLFW.DisplayAlphaBits 8] GLFW.Window
-  print window
+  GLFW.init >>= print
+  GLFW.getVersion >>= print
+  GLFW.windowHint (WindowHint'ContextVersionMajor 3)
+  GLFW.windowHint (WindowHint'ContextVersionMinor 2)
+  GLFW.windowHint (WindowHint'OpenGLDebugContext True)
+  GLFW.windowHint (WindowHint'OpenGLProfile OpenGLProfile'Core)
+  GLFW.windowHint (WindowHint'OpenGLForwardCompat True)
+  Just primary <- GLFW.getPrimaryMonitor
+  Just VideoMode{videoModeHeight, videoModeWidth} <- GLFW.getVideoMode primary
+  Just window <- GLFW.createWindow videoModeWidth videoModeHeight "DIVE" (Just primary) Nothing
+  GLFW.getWindowOpenGLProfile window >>= print
+  GLFW.makeContextCurrent (Just window)
 
   path <- getDataFileName "res/dude.png"
   Right dudeTexture <- readTexture path
@@ -31,12 +36,10 @@ main = do
   print (packUtf8 contents)
   shader <- createShader FragmentShader
   shaderSourceBS shader $= packUtf8 contents
-  compileShader shader
-  status <- compileStatus shader
-  infoLog <- shaderInfoLog shader
-  print infoLog
-  print status
-  print shader
+  get (shaderSourceBS shader) >>= print
+  compileShader shader >>= print
+  compileStatus shader >>= print
+  shaderInfoLog shader >>= print
 
   -- state <- newIORef initialState
   -- displayCallback $= display state

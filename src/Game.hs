@@ -39,8 +39,8 @@ instance UpdateOnInput Mob where
   nextState _ _ mob = mob
 
 instance UpdateOnInput Character where
-  nextState (SpecialKey UP) _ (Character x y) = Character x (y + 1)
-  nextState (SpecialKey DOWN) _ (Character x y) = Character x (y - 1)
-  nextState (SpecialKey LEFT) _ (Character x y) = Character (x + 1) y
-  nextState (SpecialKey RIGHT) _ (Character x y) = Character (x - 1) y
+  nextState Key'Up _ (Character x y) = Character x (y + 1)
+  nextState Key'Down _ (Character x y) = Character x (y - 1)
+  nextState Key'Left _ (Character x y) = Character (x + 1) y
+  nextState Key'Right _ (Character x y) = Character (x - 1) y
   nextState _ _ x = x
