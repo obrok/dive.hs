@@ -1,5 +1,6 @@
+import Graphics.GLUtil.JuicyTextures
 import Graphics.GLUtil.VertexArrayObjects (makeVAO, withVAO)
-import Graphics.GLUtil (simpleShaderProgram, bufferIndices, drawIndexedTris, program)
+import Graphics.GLUtil (simpleShaderProgram, bufferIndices, drawIndexedTris, program, withTextures2D, printErrorMsg)
 import Graphics.UI.GLFW as GLFW
 import Graphics.Rendering.OpenGL
 import Data.IORef
@@ -12,9 +13,13 @@ import Linear (V2(..))
 data Drawable = Drawable Int Int
 
 type Pos = '("vertexCoord", V2 GLfloat)
+type Tex = '("texCoord", V2 GLfloat)
 
 pos :: SField Pos
 pos = SField
+
+tex :: SField Tex
+tex = SField
 
 main :: IO ()
 main = do
@@ -35,23 +40,19 @@ main = do
   GLFW.makeContextCurrent (Just window)
   GLFW.swapInterval 1
 
-  -- path <- getDataFileName "res/dude.png"
-  -- Right dudeTexture <- readTexture path
-  -- print dudeTexture
-
-  -- texture Texture2D $= Enabled
-  -- activeTexture $= TextureUnit 0
-  -- textureBinding Texture2D $= Just dudeTexture
+  (x, y) <- GLFW.getWindowSize window
+  let tiler = tile (x `div` tileSize) (y `div` tileSize)
+  stateRenderer <- render tiler
 
   state <- newIORef initialState
   setKeyCallback window $ Just (input state)
-  mainLoop window state
+  mainLoop window state stateRenderer
 
-mainLoop :: Window -> IORef State -> IO ()
-mainLoop window state = do
-  display window state
+mainLoop :: Window -> IORef State -> (State -> IO ()) -> IO ()
+mainLoop window state stateRenderer = do
+  display window state stateRenderer
   GLFW.waitEvents
-  mainLoop window state
+  mainLoop window state stateRenderer
 
 tileSize :: Int
 tileSize = 24
@@ -61,32 +62,45 @@ input state _window key _someInt KeyState'Released _modifiers =
   state $~ updateState key
 input _ _ _ _ _ _ = return ()
 
-display :: Window -> IORef State -> IO ()
-display window stateRef = do
-  (x, y) <- GLFW.getWindowSize window
-  let tiler = tile (x `div` tileSize) (y `div` tileSize)
+display :: Window -> IORef State -> (State -> IO ()) -> IO ()
+display window stateRef stateRenderer = do
   clear [ ColorBuffer ]
   state <- get stateRef
-  render tiler state
+  stateRenderer state
   GLFW.swapBuffers window
 
-render :: (Drawable -> [V2 GLfloat]) -> State -> IO ()
-render tiler state = do
-  vertices      <- bufferVertices . tileTex $ tiles
+loadTexture :: IO TextureObject
+loadTexture = do
+  path <- getDataFileName "res/dude.png"
+  Right dudeTexture <- readTexture path
+  return dudeTexture
+
+render :: (Drawable -> [V2 GLfloat]) -> IO (State -> IO ())
+render tiler = do
+  dudeTexture   <- loadTexture
   vertexPath    <- getDataFileName "src/shaders/tile.vert"
   fragmentPath  <- getDataFileName "src/shaders/tile.frag"
   shaderProgram <- simpleShaderProgram vertexPath fragmentPath
-  indexBuffer   <- bufferIndices indices
-  vertexVAO     <- makeVAO $ do
-    enableVertices' shaderProgram vertices
-    bindVertices vertices
-    bindBuffer ElementArrayBuffer $= Just indexBuffer
-  currentProgram $= Just (program shaderProgram)
-  withVAO vertexVAO $ drawIndexedTris (fromIntegral numVertices)
+  printErrorMsg "pre set sampler"
+  setUniforms shaderProgram (texSampler =: 0)
+  printErrorMsg "set sampler"
+  return $ \state -> do
+    let indices     = take numVertices $ foldMap (flip map [0,1,2,2,1,3] . (+)) [0,4..]
+        numVertices = 6 * length tiles
+        tiles       = map tiler . drawables $ state
+    vertices      <- bufferVertices . tileTex $ tiles
+    indexBuffer   <- bufferIndices indices
+    vertexVAO     <- makeVAO $ do
+      enableVertices' shaderProgram vertices
+      bindVertices vertices
+      bindBuffer ElementArrayBuffer $= Just indexBuffer
+    currentProgram $= Just (program shaderProgram)
+    withVAO vertexVAO . withTextures2D [dudeTexture] $ do
+      printErrorMsg "pre draw"
+      drawIndexedTris (fromIntegral numVertices)
+    printErrorMsg "draw"
   where
-    indices     = take numVertices $ foldMap (flip map [0,1,2,2,1,3] . (+)) [0,4..]
-    numVertices = 6 * length tiles
-    tiles       = concatMap tiler . drawables $ state
+    texSampler  = SField :: SField '("tex", GLint)
 
 drawables :: State -> [Drawable]
 drawables state = charDrawable : mobDrawables
@@ -103,5 +117,6 @@ tile tilesX tilesY (Drawable x y) =
         y1 = 2 * (fromIntegral y / fromIntegral tilesY) - 1
         y2 = 2 * (fromIntegral (y + 1) / fromIntegral tilesY) - 1
 
-tileTex :: [V2 GLfloat] -> [FieldRec '[Pos]]
-tileTex = map (pos =:)
+tileTex :: [[V2 GLfloat]] -> [FieldRec [Pos,Tex]]
+tileTex = foldMap (flip (zipWith (<+>)) (cycle coords) . map (pos =:))
+  where coords = map (tex =:) $ V2 <$> [0,1] <*> [0,1]
