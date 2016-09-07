@@ -1,10 +1,8 @@
-import Graphics.GLUtil.JuicyTextures (readTexture)
 import Graphics.GLUtil.VertexArrayObjects (makeVAO, withVAO)
 import Graphics.GLUtil (simpleShaderProgram, bufferIndices, drawIndexedTris, program)
 import Graphics.UI.GLFW as GLFW
 import Graphics.Rendering.OpenGL
 import Data.IORef
-import Control.Monad
 import Game
 import Paths_dive_hs (getDataFileName)
 import Data.Vinyl
@@ -14,18 +12,13 @@ import Linear (V2(..))
 data Drawable = Drawable Int Int
 
 type Pos = '("vertexCoord", V2 GLfloat)
-type Tex = '("texCoord", V2 GLfloat)
 
 pos :: SField Pos
 pos = SField
 
-tex :: SField Tex
-tex = SField
-
 main :: IO ()
 main = do
-  GLFW.setErrorCallback $ Just simpleErrorCallback
-  GLFW.init
+  True <- GLFW.init
   Just primary <- GLFW.getPrimaryMonitor
   Just VideoMode{videoModeHeight, videoModeWidth, videoModeRedBits, videoModeGreenBits, videoModeBlueBits, videoModeRefreshRate} <- GLFW.getVideoMode primary
   GLFW.windowHint (WindowHint'ContextVersionMajor 3)
@@ -40,7 +33,6 @@ main = do
   GLFW.windowHint (WindowHint'ClientAPI ClientAPI'OpenGL)
   Just window <- GLFW.createWindow videoModeWidth videoModeHeight "DIVE" (Just primary) Nothing
   GLFW.makeContextCurrent (Just window)
-  GLFW.setErrorCallback $ Just simpleErrorCallback
   GLFW.swapInterval 1
 
   -- path <- getDataFileName "res/dude.png"
@@ -55,9 +47,7 @@ main = do
   setKeyCallback window $ Just (input state)
   mainLoop window state
 
-simpleErrorCallback e s =
-  putStrLn $ unwords [show e, show s]
-
+mainLoop :: Window -> IORef State -> IO ()
 mainLoop window state = do
   display window state
   GLFW.waitEvents
@@ -67,7 +57,7 @@ tileSize :: Int
 tileSize = 24
 
 input :: IORef State -> KeyCallback
-input state window key _someInt KeyState'Released _modifiers =
+input state _window key _someInt KeyState'Released _modifiers =
   state $~ updateState key
 input _ _ _ _ _ _ = return ()
 
@@ -95,7 +85,7 @@ render tiler state = do
   withVAO vertexVAO $ drawIndexedTris (fromIntegral numVertices)
   where
     indices     = take numVertices $ foldMap (flip map [0,1,2,2,1,3] . (+)) [0,4..]
-    numVertices = 6 * (length tiles)
+    numVertices = 6 * length tiles
     tiles       = concatMap tiler . drawables $ state
 
 drawables :: State -> [Drawable]
@@ -108,10 +98,10 @@ drawables state = charDrawable : mobDrawables
 tile :: Int -> Int -> Drawable -> [V2 GLfloat]
 tile tilesX tilesY (Drawable x y) =
   V2 <$> [x1, x2] <*> [y1, y2]
-  where x1 = (fromIntegral x) / (fromIntegral tilesX)
-        x2 = (fromIntegral $ x + 1) / (fromIntegral tilesX)
-        y1 = (fromIntegral y) / (fromIntegral tilesY)
-        y2 = (fromIntegral $ y + 1) / (fromIntegral tilesY)
+  where x1 = fromIntegral x / fromIntegral tilesX
+        x2 = fromIntegral (x + 1) / fromIntegral tilesX
+        y1 = fromIntegral y / fromIntegral tilesY
+        y2 = fromIntegral (y + 1) / fromIntegral tilesY
 
 tileTex :: [V2 GLfloat] -> [FieldRec '[Pos]]
 tileTex = map (pos =:)

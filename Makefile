@@ -1,9 +1,12 @@
-.PHONY: all lint run install
+.PHONY: all lint run install configure
 
-all: install lint run
+all: install lint configure run
 
 install:
 	cabal install
+
+configure:
+	cabal configure
 
 lint:
 	.cabal-sandbox/bin/hlint .
