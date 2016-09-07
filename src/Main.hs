@@ -98,10 +98,10 @@ drawables state = charDrawable : mobDrawables
 tile :: Int -> Int -> Drawable -> [V2 GLfloat]
 tile tilesX tilesY (Drawable x y) =
   V2 <$> [x1, x2] <*> [y1, y2]
-  where x1 = fromIntegral x / fromIntegral tilesX
-        x2 = fromIntegral (x + 1) / fromIntegral tilesX
-        y1 = fromIntegral y / fromIntegral tilesY
-        y2 = fromIntegral (y + 1) / fromIntegral tilesY
+  where x1 = 2 * (fromIntegral x / fromIntegral tilesX) - 1
+        x2 = 2 * (fromIntegral (x + 1) / fromIntegral tilesX) - 1
+        y1 = 2 * (fromIntegral y / fromIntegral tilesY) - 1
+        y2 = 2 * (fromIntegral (y + 1) / fromIntegral tilesY) - 1
 
 tileTex :: [V2 GLfloat] -> [FieldRec '[Pos]]
 tileTex = map (pos =:)
