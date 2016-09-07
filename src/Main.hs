@@ -11,7 +11,7 @@ import Data.Vinyl
 import Graphics.VinylGL
 import Linear (V2(..))
 
-data Drawable = Drawable Int Int (Color3 GLfloat)
+data Drawable = Drawable Int Int
 
 type Pos = '("vertexCoord", V2 GLfloat)
 type Tex = '("texCoord", V2 GLfloat)
@@ -100,19 +100,13 @@ render tiler state = do
 
 drawables :: State -> [Drawable]
 drawables state = charDrawable : mobDrawables
-  where charDrawable = Drawable characterX characterY green
+  where charDrawable = Drawable characterX characterY
         Character characterX characterY = getCharacter state
         mobDrawables = map mobDrawable (getMobs state)
-        mobDrawable (Mob x y _) = Drawable x y red
-
-red :: Color3 GLfloat
-red = Color3 1 0 0
-
-green :: Color3 GLfloat
-green = Color3 0 0 1
+        mobDrawable (Mob x y _) = Drawable x y
 
 tile :: Int -> Int -> Drawable -> [V2 GLfloat]
-tile tilesX tilesY (Drawable x y _) =
+tile tilesX tilesY (Drawable x y) =
   V2 <$> [x1, x2] <*> [y1, y2]
   where x1 = (fromIntegral x) / (fromIntegral tilesX)
         x2 = (fromIntegral $ x + 1) / (fromIntegral tilesX)
