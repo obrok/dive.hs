@@ -1,75 +1,102 @@
-import Graphics.UI.GLUT
 import Graphics.GLUtil.JuicyTextures (readTexture)
+import Graphics.GLUtil.VertexArrayObjects (makeVAO, withVAO)
+import Graphics.GLUtil (simpleShaderProgram, bufferIndices, drawIndexedTris, program)
+import Graphics.UI.GLFW as GLFW
+import Graphics.Rendering.OpenGL
 import Data.IORef
 import Control.Monad
 import Game
-import DisplayMode
 import Paths_dive_hs (getDataFileName)
+import Data.Vinyl
+import Graphics.VinylGL
+import Linear (V2(..))
 
 data Drawable = Drawable Int Int (Color3 GLfloat)
 
+type Pos = '("vertexCoord", V2 GLfloat)
+type Tex = '("texCoord", V2 GLfloat)
+
+pos :: SField Pos
+pos = SField
+
+tex :: SField Tex
+tex = SField
+
 main :: IO ()
 main = do
-  setDisplayMode
-  (_progName, args) <- getArgsAndInitialize
-  _window <- createWindow "dive"
-  print args
+  GLFW.setErrorCallback $ Just simpleErrorCallback
+  GLFW.init
+  Just primary <- GLFW.getPrimaryMonitor
+  Just VideoMode{videoModeHeight, videoModeWidth, videoModeRedBits, videoModeGreenBits, videoModeBlueBits, videoModeRefreshRate} <- GLFW.getVideoMode primary
+  GLFW.windowHint (WindowHint'ContextVersionMajor 3)
+  GLFW.windowHint (WindowHint'ContextVersionMinor 2)
+  GLFW.windowHint (WindowHint'OpenGLProfile OpenGLProfile'Core)
+  GLFW.windowHint (WindowHint'OpenGLForwardCompat True)
+  GLFW.windowHint (WindowHint'RedBits videoModeRedBits)
+  GLFW.windowHint (WindowHint'GreenBits videoModeGreenBits)
+  GLFW.windowHint (WindowHint'BlueBits videoModeBlueBits)
+  GLFW.windowHint (WindowHint'AlphaBits 8)
+  GLFW.windowHint (WindowHint'RefreshRate videoModeRefreshRate)
+  GLFW.windowHint (WindowHint'ClientAPI ClientAPI'OpenGL)
+  Just window <- GLFW.createWindow videoModeWidth videoModeHeight "DIVE" (Just primary) Nothing
+  GLFW.makeContextCurrent (Just window)
+  GLFW.setErrorCallback $ Just simpleErrorCallback
+  GLFW.swapInterval 1
 
-  profiles <- contextProfile
-  print profiles
+  -- path <- getDataFileName "res/dude.png"
+  -- Right dudeTexture <- readTexture path
+  -- print dudeTexture
 
-  path <- getDataFileName "res/dude.png"
-  Right dudeTexture <- readTexture path
-  print dudeTexture
+  -- texture Texture2D $= Enabled
+  -- activeTexture $= TextureUnit 0
+  -- textureBinding Texture2D $= Just dudeTexture
 
-  texture Texture2D $= Enabled
-  activeTexture $= TextureUnit 0
-  textureBinding Texture2D $= Just dudeTexture
-
-  shaderPath <- getDataFileName "src/shaders/texture_quad.frag"
-  contents <- readFile shaderPath
-  print (packUtf8 contents)
-  shader <- createShader FragmentShader
-  shaderSourceBS shader $= packUtf8 contents
-  compileShader shader
-  status <- compileStatus shader
-  infoLog <- shaderInfoLog shader
-  print infoLog
-  print status
-  print shader
-
-  fullScreen
   state <- newIORef initialState
-  displayCallback $= display state
-  keyboardMouseCallback $= Just (input state)
-  mainLoop
+  setKeyCallback window $ Just (input state)
+  mainLoop window state
 
-tileSize :: GLsizei
+simpleErrorCallback e s =
+  putStrLn $ unwords [show e, show s]
+
+mainLoop window state = do
+  display window state
+  GLFW.waitEvents
+  mainLoop window state
+
+tileSize :: Int
 tileSize = 24
 
-input :: IORef State -> KeyboardMouseCallback
-input state key Down _modifiers _position = do
+input :: IORef State -> KeyCallback
+input state window key _someInt KeyState'Released _modifiers =
   state $~ updateState key
-  postRedisplay Nothing
-input _ _ _ _ _ = return ()
+input _ _ _ _ _ _ = return ()
 
-display :: IORef State -> DisplayCallback
-display stateRef = do
+display :: Window -> IORef State -> IO ()
+display window stateRef = do
+  (x, y) <- GLFW.getWindowSize window
+  let tiler = tile (x `div` tileSize) (y `div` tileSize)
   clear [ ColorBuffer ]
   state <- get stateRef
-  Size x y <- get windowSize
-  preservingMatrix $ do
-    ortho2D 0 (fromIntegral $ x `div` tileSize) 0 (fromIntegral $ y `div` tileSize)
-    render state
-  flush
+  render tiler state
+  GLFW.swapBuffers window
 
-render :: State -> IO ()
-render state = forM_ (drawables state) draw
-
-draw :: Drawable -> IO ()
-draw (Drawable x y c) = do
-  color c
-  tile x y
+render :: (Drawable -> [V2 GLfloat]) -> State -> IO ()
+render tiler state = do
+  vertices      <- bufferVertices . tileTex $ tiles
+  vertexPath    <- getDataFileName "src/shaders/tile.vert"
+  fragmentPath  <- getDataFileName "src/shaders/tile.frag"
+  shaderProgram <- simpleShaderProgram vertexPath fragmentPath
+  indexBuffer   <- bufferIndices indices
+  vertexVAO     <- makeVAO $ do
+    enableVertices' shaderProgram vertices
+    bindVertices vertices
+    bindBuffer ElementArrayBuffer $= Just indexBuffer
+  currentProgram $= Just (program shaderProgram)
+  withVAO vertexVAO $ drawIndexedTris (fromIntegral numVertices)
+  where
+    indices     = take numVertices $ foldMap (flip map [0,1,2,2,1,3] . (+)) [0,4..]
+    numVertices = 6 * (length tiles)
+    tiles       = concatMap tiler . drawables $ state
 
 drawables :: State -> [Drawable]
 drawables state = charDrawable : mobDrawables
@@ -78,18 +105,19 @@ drawables state = charDrawable : mobDrawables
         mobDrawables = map mobDrawable (getMobs state)
         mobDrawable (Mob x y _) = Drawable x y red
 
-tile :: Int -> Int -> IO ()
-tile x y =
-  quad (fromIntegral x) (fromIntegral (x + 1)) (fromIntegral y) (fromIntegral (y + 1))
-
 red :: Color3 GLfloat
 red = Color3 1 0 0
 
 green :: Color3 GLfloat
 green = Color3 0 0 1
 
-quad :: GLfloat -> GLfloat -> GLfloat -> GLfloat -> IO ()
-quad x1 x2 y1 y2 =
-  renderPrimitive Quads $
-    mapM_ (\[x, y] -> vertex $ Vertex2 x y) points
-  where points = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]
+tile :: Int -> Int -> Drawable -> [V2 GLfloat]
+tile tilesX tilesY (Drawable x y _) =
+  V2 <$> [x1, x2] <*> [y1, y2]
+  where x1 = (fromIntegral x) / (fromIntegral tilesX)
+        x2 = (fromIntegral $ x + 1) / (fromIntegral tilesX)
+        y1 = (fromIntegral y) / (fromIntegral tilesY)
+        y2 = (fromIntegral $ y + 1) / (fromIntegral tilesY)
+
+tileTex :: [V2 GLfloat] -> [FieldRec '[Pos]]
+tileTex = map (pos =:)

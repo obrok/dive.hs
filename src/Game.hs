@@ -1,15 +1,21 @@
 module Game where
-import Graphics.UI.GLUT
+
+import Graphics.UI.GLFW
 
 data Character = Character Int Int
+  deriving (Show)
 
 data Mobs = Mobs [Mob]
+  deriving (Show)
 
 data Mob = Mob Int Int Status
+  deriving (Show)
 
 data Status = Alive | Dead
+  deriving (Show)
 
 data State = State { character :: Character, mobs :: Mobs }
+  deriving (Show)
 
 initialState :: State
 initialState = State (Character 0 0) (Mobs [Mob 10 10 Alive])
@@ -38,8 +44,8 @@ instance UpdateOnInput Mob where
   nextState _ _ mob = mob
 
 instance UpdateOnInput Character where
-  nextState (SpecialKey KeyUp) _ (Character x y) = Character x (y + 1)
-  nextState (SpecialKey KeyDown) _ (Character x y) = Character x (y - 1)
-  nextState (SpecialKey KeyRight) _ (Character x y) = Character (x + 1) y
-  nextState (SpecialKey KeyLeft) _ (Character x y) = Character (x - 1) y
+  nextState Key'Up _ (Character x y) = Character x (y + 1)
+  nextState Key'Down _ (Character x y) = Character x (y - 1)
+  nextState Key'Left _ (Character x y) = Character (x + 1) y
+  nextState Key'Right _ (Character x y) = Character (x - 1) y
   nextState _ _ x = x
