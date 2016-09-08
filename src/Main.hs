@@ -9,7 +9,6 @@ import Paths_dive_hs (getDataFileName)
 import Data.Vinyl
 import Graphics.VinylGL
 import Linear (V2(..))
-import Data.Foldable (traverse_)
 
 data Drawable = Drawable Int Int
 
@@ -45,6 +44,9 @@ main = do
   let tiler = tile (x `div` tileSize) (y `div` tileSize)
   stateRenderer <- render tiler
 
+  textureFilter Texture2D $= ((Nearest, Nothing), Nearest)
+  texture2DWrap $= (Repeated, ClampToEdge)
+
   state <- newIORef initialState
   setKeyCallback window $ Just (input state)
   mainLoop window state stateRenderer
@@ -71,12 +73,7 @@ display window stateRef stateRenderer = do
   GLFW.swapBuffers window
 
 loadTextures :: [FilePath] -> IO [TextureObject]
-loadTextures = fmap (either error id . sequence) . mapM aux
-  where aux f = do img <- readTexture f
-                   traverse_ (const texFilter) img
-                   return img
-        texFilter = do textureFilter Texture2D $= ((Nearest, Nothing), Nearest)
-                       texture2DWrap $= (Repeated, ClampToEdge)
+loadTextures = fmap (either error id . sequence) . mapM readTexture
 
 render :: (Drawable -> [V2 GLfloat]) -> IO (State -> IO ())
 render tiler = do
@@ -89,7 +86,6 @@ render tiler = do
     let indices     = take numVertices $ foldMap (flip map [0,1,2,2,1,3] . (+)) [0,4..]
         numVertices = 6 * length tiles
         tiles       = map tiler . drawables $ state
-    print $ tileTex tiles
     vertices      <- bufferVertices . tileTex $ tiles
     indexBuffer   <- bufferIndices indices
     vertexVAO     <- makeVAO $ do
