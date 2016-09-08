@@ -117,4 +117,4 @@ tile tilesX tilesY (Drawable x y) =
 
 tileTex :: [[V2 GLfloat]] -> [FieldRec [Pos,Tex]]
 tileTex = foldMap (flip (zipWith (<+>)) (cycle coords) . map (pos =:))
-  where coords = map (tex =:) $ V2 <$> [0,1] <*> [0,1]
+  where coords = map (tex =:) $ V2 <$> [0,1] <*> [1,0]
