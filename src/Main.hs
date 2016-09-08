@@ -46,6 +46,8 @@ main = do
 
   textureFilter Texture2D $= ((Nearest, Nothing), Nearest)
   texture2DWrap $= (Repeated, ClampToEdge)
+  blend $= Enabled
+  blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
 
   state <- newIORef initialState
   setKeyCallback window $ Just (input state)
@@ -67,6 +69,7 @@ input _ _ _ _ _ _ = return ()
 
 display :: Window -> IORef State -> (State -> IO ()) -> IO ()
 display window stateRef stateRenderer = do
+  clearColor $= lightGray
   clear [ ColorBuffer ]
   state <- get stateRef
   stateRenderer state
@@ -114,3 +117,6 @@ tile tilesX tilesY (Drawable x y) =
 tileTex :: [[V2 GLfloat]] -> [FieldRec [Pos,Tex]]
 tileTex = foldMap (flip (zipWith (<+>)) (cycle coords) . map (pos =:))
   where coords = map (tex =:) $ V2 <$> [0,1] <*> [1,0]
+
+lightGray :: Color4 GLfloat
+lightGray = Color4 0.2 0.2 0.2 1
