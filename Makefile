@@ -3,7 +3,7 @@
 all: install lint configure run
 
 install:
-	cabal install
+	cabal install --only-dependencies
 
 configure:
 	cabal configure
