@@ -96,8 +96,7 @@ render tiler = do
       bindVertices vertices
       bindBuffer ElementArrayBuffer $= Just indexBuffer
     currentProgram $= Just (program shaderProgram)
-    withVAO vertexVAO . withTextures2D [dudeTexture] $ do
-      drawIndexedTris (fromIntegral numVertices)
+    withVAO vertexVAO . withTextures2D [dudeTexture] $ drawIndexedTris (fromIntegral numVertices)
 
 drawables :: State -> [Drawable]
 drawables state = charDrawable : mobDrawables
