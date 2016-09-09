@@ -9,8 +9,17 @@ import Paths_dive_hs (getDataFileName)
 import Data.Vinyl
 import Graphics.VinylGL
 import Linear (V2(..))
+import GHC.Exts
+import Control.Monad
+import Data.Foldable
 
-data Drawable = Drawable Int Int
+data Drawable = Drawable Int Int Representation
+
+representation :: Drawable -> Representation
+representation (Drawable _ _ r) = r
+
+data Representation = Dude | Devil
+  deriving (Eq, Ord)
 
 type Pos = '("vertexCoord", V2 GLfloat)
 type Tex = '("texCoord", V2 GLfloat)
@@ -44,8 +53,6 @@ main = do
   let tiler = tile (x `div` tileSize) (y `div` tileSize)
   stateRenderer <- render tiler
 
-  textureFilter Texture2D $= ((Nearest, Nothing), Nearest)
-  texture2DWrap $= (Repeated, ClampToEdge)
   blend $= Enabled
   blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
 
@@ -76,37 +83,51 @@ display window stateRef stateRenderer = do
   GLFW.swapBuffers window
 
 loadTextures :: [FilePath] -> IO [TextureObject]
-loadTextures = fmap (either error id . sequence) . mapM readTexture
+loadTextures = fmap (either error id . sequence) . mapM aux
+  where aux f = do img <- readTexture f
+                   traverse_ (const texFilter) img
+                   return img
+        texFilter = do textureFilter Texture2D $= ((Nearest, Nothing), Nearest)
+                       texture2DWrap $= (Repeated, ClampToEdge)
 
 render :: (Drawable -> [V2 GLfloat]) -> IO (State -> IO ())
 render tiler = do
-  dudePath      <- getDataFileName "res/dude.png"
-  [dudeTexture] <- loadTextures [ dudePath ]
-  vertexPath    <- getDataFileName "src/shaders/tile.vert"
-  fragmentPath  <- getDataFileName "src/shaders/tile.frag"
-  shaderProgram <- simpleShaderProgram vertexPath fragmentPath
-  return $ \state -> do
-    let indices     = take numVertices $ foldMap (flip map [0,1,2,2,1,3] . (+)) [0,4..]
-        numVertices = 6 * length tiles
-        tiles       = map tiler . drawables $ state
-    vertices      <- bufferVertices . tileTex $ tiles
-    indexBuffer   <- bufferIndices indices
-    vertexVAO     <- makeVAO $ do
-      enableVertices' shaderProgram vertices
-      bindVertices vertices
-      bindBuffer ElementArrayBuffer $= Just indexBuffer
-    currentProgram $= Just (program shaderProgram)
-    withVAO vertexVAO . withTextures2D [dudeTexture] $ drawIndexedTris (fromIntegral numVertices)
+  dudePath                  <- getDataFileName "res/dude.png"
+  mobPath                   <- getDataFileName "res/mob.png"
+  [dudeTexture, mobTexture] <- loadTextures [dudePath, mobPath]
+  vertexPath                <- getDataFileName "src/shaders/tile.vert"
+  fragmentPath              <- getDataFileName "src/shaders/tile.frag"
+  shaderProgram             <- simpleShaderProgram vertexPath fragmentPath
+  return $ \state ->
+    forM_ (groupWith representation . drawables $ state) $ \ds -> do
+      let indices     = take numVertices $ foldMap (flip map [0,1,2,2,1,3] . (+)) [0,4..]
+          tiles       = map tiler ds
+          numVertices = 6 * length tiles
+      vertices    <- bufferVertices . tileTex $ tiles
+      indexBuffer <- bufferIndices indices
+      vertexVAO   <- makeVAO $ do
+        enableVertices' shaderProgram vertices
+        bindVertices vertices
+        bindBuffer ElementArrayBuffer $= Just indexBuffer
+      currentProgram $= Just (program shaderProgram)
+      withVAO vertexVAO . withTextures2D [pickTexture ds [dudeTexture, mobTexture]] $ drawIndexedTris (fromIntegral numVertices)
+
+pickTexture :: [Drawable] -> [TextureObject] -> TextureObject
+pickTexture (d:_) [dudeTexture, mobTexture] =
+  case representation d of
+    Dude -> dudeTexture
+    Devil -> mobTexture
+pickTexture _ _ = undefined
 
 drawables :: State -> [Drawable]
 drawables state = charDrawable : mobDrawables
-  where charDrawable = Drawable characterX characterY
+  where charDrawable = Drawable characterX characterY Dude
         Character characterX characterY = getCharacter state
         mobDrawables = map mobDrawable (getMobs state)
-        mobDrawable (Mob x y _) = Drawable x y
+        mobDrawable (Mob x y _) = Drawable x y Devil
 
 tile :: Int -> Int -> Drawable -> [V2 GLfloat]
-tile tilesX tilesY (Drawable x y) =
+tile tilesX tilesY (Drawable x y _) =
   V2 <$> [x1, x2] <*> [y1, y2]
   where x1 = 2 * (fromIntegral x / fromIntegral tilesX) - 1
         x2 = 2 * (fromIntegral (x + 1) / fromIntegral tilesX) - 1
