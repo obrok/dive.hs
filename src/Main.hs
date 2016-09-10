@@ -66,12 +66,12 @@ display window stateRef stateRenderer = do
 
 render :: (Drawable -> [V2 GLfloat]) -> IO (State -> IO ())
 render tiler = do
-  [dudeTexture, mobTexture] <- loadTextures
-  vertexPath                <- getDataFileName "src/shaders/tile.vert"
-  fragmentPath              <- getDataFileName "src/shaders/tile.frag"
-  shaderProgram             <- simpleShaderProgram vertexPath fragmentPath
+  pickTexture   <- loadTextures
+  vertexPath    <- getDataFileName "src/shaders/tile.vert"
+  fragmentPath  <- getDataFileName "src/shaders/tile.frag"
+  shaderProgram <- simpleShaderProgram vertexPath fragmentPath
   return $ \state ->
-    forM_ (groupWith representation . drawables $ state) $ \ds -> do
+    forM_ (groupWith representation . drawables $ state) $ \ds@(d:_) -> do
       let indices     = take numVertices $ foldMap (flip map [0,1,2,2,1,3] . (+)) [0,4..]
           tiles       = map tiler ds
           numVertices = 6 * length tiles
@@ -82,14 +82,7 @@ render tiler = do
         bindVertices vertices
         bindBuffer ElementArrayBuffer $= Just indexBuffer
       currentProgram $= Just (program shaderProgram)
-      withVAO vertexVAO . withTextures2D [pickTexture ds [dudeTexture, mobTexture]] $ drawIndexedTris (fromIntegral numVertices)
-
-pickTexture :: [Drawable] -> [TextureObject] -> TextureObject
-pickTexture (d:_) [dudeTexture, mobTexture] =
-  case representation d of
-    Dude -> dudeTexture
-    Devil -> mobTexture
-pickTexture _ _ = undefined
+      withVAO vertexVAO . withTextures2D [pickTexture $ representation d] $ drawIndexedTris (fromIntegral numVertices)
 
 drawables :: State -> [Drawable]
 drawables state = charDrawable : mobDrawables
