@@ -1,17 +1,17 @@
-import Graphics.GLUtil.VertexArrayObjects (makeVAO, withVAO)
-import Graphics.GLUtil (simpleShaderProgram, bufferIndices, drawIndexedTris, program, withTextures2D)
-import Graphics.UI.GLFW as GLFW
-import Graphics.Rendering.OpenGL
+import Control.Monad
 import Data.IORef
-import Game
 import Data.Vinyl
+import Dive.Graphics.Textures
+import GHC.Exts
+import Game
+import Graphics.GLUtil (simpleShaderProgram, bufferIndices, drawIndexedTris, program, withTextures2D)
+import Graphics.GLUtil.VertexArrayObjects (makeVAO, withVAO)
+import Graphics.Rendering.OpenGL
+import Graphics.UI.GLFW as GLFW
 import Graphics.VinylGL
 import Linear (V2(..))
-import GHC.Exts
-import Control.Monad
-import qualified Dive.Graphics.Window as Window
-import Dive.Graphics.Textures
 import Paths_dive_hs (getDataFileName)
+import qualified Dive.Graphics.Window as Window
 
 data Drawable = Drawable Int Int Representation
 
