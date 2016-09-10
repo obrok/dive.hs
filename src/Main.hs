@@ -1,26 +1,22 @@
-import Graphics.GLUtil.JuicyTextures
 import Graphics.GLUtil.VertexArrayObjects (makeVAO, withVAO)
-import Graphics.GLUtil (simpleShaderProgram, bufferIndices, drawIndexedTris, program, withTextures2D, texture2DWrap)
+import Graphics.GLUtil (simpleShaderProgram, bufferIndices, drawIndexedTris, program, withTextures2D)
 import Graphics.UI.GLFW as GLFW
 import Graphics.Rendering.OpenGL
 import Data.IORef
 import Game
-import Paths_dive_hs (getDataFileName)
 import Data.Vinyl
 import Graphics.VinylGL
 import Linear (V2(..))
 import GHC.Exts
 import Control.Monad
-import Data.Foldable
-import qualified Window
+import qualified Dive.Graphics.Window as Window
+import Dive.Graphics.Textures
+import Paths_dive_hs (getDataFileName)
 
 data Drawable = Drawable Int Int Representation
 
 representation :: Drawable -> Representation
 representation (Drawable _ _ r) = r
-
-data Representation = Dude | Devil
-  deriving (Eq, Ord)
 
 type Pos = '("vertexCoord", V2 GLfloat)
 type Tex = '("texCoord", V2 GLfloat)
@@ -68,19 +64,9 @@ display window stateRef stateRenderer = do
   stateRenderer state
   GLFW.swapBuffers window
 
-loadTextures :: [FilePath] -> IO [TextureObject]
-loadTextures = fmap (either error id . sequence) . mapM aux
-  where aux f = do img <- readTexture f
-                   traverse_ (const texFilter) img
-                   return img
-        texFilter = do textureFilter Texture2D $= ((Nearest, Nothing), Nearest)
-                       texture2DWrap $= (Repeated, ClampToEdge)
-
 render :: (Drawable -> [V2 GLfloat]) -> IO (State -> IO ())
 render tiler = do
-  dudePath                  <- getDataFileName "res/dude.png"
-  mobPath                   <- getDataFileName "res/mob.png"
-  [dudeTexture, mobTexture] <- loadTextures [dudePath, mobPath]
+  [dudeTexture, mobTexture] <- loadTextures
   vertexPath                <- getDataFileName "src/shaders/tile.vert"
   fragmentPath              <- getDataFileName "src/shaders/tile.frag"
   shaderProgram             <- simpleShaderProgram vertexPath fragmentPath
