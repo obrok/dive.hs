@@ -29,6 +29,9 @@ getCharacter State { character } = character
 getMobs :: State -> [Mob]
 getMobs State { mobs = Mobs ms } = ms
 
+getWalls :: State -> [(Int, Int)]
+getWalls _ = [(20, 20), (20, 21), (21, 20)]
+
 class UpdateOnInput a where
   nextState :: Key -> State -> a -> a
 

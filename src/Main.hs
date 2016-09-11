@@ -85,11 +85,13 @@ render tiler = do
       withVAO vertexVAO . withTextures2D [pickTexture $ representation d] $ drawIndexedTris (fromIntegral numVertices)
 
 drawables :: State -> [Drawable]
-drawables state = charDrawable : mobDrawables
+drawables state = charDrawable : mobDrawables ++ wallDrawables
   where charDrawable = Drawable characterX characterY Dude
         Character characterX characterY = getCharacter state
         mobDrawables = map mobDrawable (getMobs state)
         mobDrawable (Mob x y _) = Drawable x y Devil
+        wallDrawables = map wallDrawable (getWalls state)
+        wallDrawable (x, y) = Drawable x y Wall
 
 tile :: Int -> Int -> Drawable -> [V2 GLfloat]
 tile tilesX tilesY (Drawable x y _) =
