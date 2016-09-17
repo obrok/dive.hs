@@ -1,6 +1,6 @@
-.PHONY: all lint run install configure
+.PHONY: all lint run install configure test
 
-all: install lint configure run
+all: install configure test lint run
 
 install:
 	cabal install --only-dependencies
@@ -13,3 +13,6 @@ lint:
 
 run:
 	cabal run
+
+test:
+	cabal exec -- runhaskell -isrc -itest test/Spec.hs
