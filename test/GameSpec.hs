@@ -6,6 +6,6 @@ main :: IO ()
 main = hspec spec
 
 spec :: Spec
-spec = describe "Game" $ do
-  it "asserts the truth" $ do
+spec = describe "Game" $
+  it "asserts the truth" $
     True `shouldBe` True

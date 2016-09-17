@@ -40,8 +40,8 @@ nextState :: GameTime -> State -> State
 nextState _time state = state
 
 applyAction :: Key -> State -> (GameTime, State)
-applyAction Key'Up state@State {character = (Character x y)} = (GameTime 0, state{character = Character x (y + 1)})
-applyAction Key'Down state@State {character = (Character x y)} = (GameTime 0, state{character = Character x (y - 1)})
-applyAction Key'Left state@State {character = (Character x y)} = (GameTime 0, state{character = Character (x - 1) y})
-applyAction Key'Right state@State {character = (Character x y)} = (GameTime 0, state{character = Character (x + 1) y})
+applyAction Key'Up state@State{character = (Character x y)} = (GameTime 0, state{character = Character x (y + 1)})
+applyAction Key'Down state@State{character = (Character x y)} = (GameTime 0, state{character = Character x (y - 1)})
+applyAction Key'Left state@State{character = (Character x y)} = (GameTime 0, state{character = Character (x - 1) y})
+applyAction Key'Right state@State{character = (Character x y)} = (GameTime 0, state{character = Character (x + 1) y})
 applyAction _ x = (GameTime 0, x)
