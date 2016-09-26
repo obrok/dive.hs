@@ -1,22 +1,22 @@
 import Control.Monad
 import Data.IORef
 import Data.Vinyl
-import Dive.Graphics.Textures
+import qualified Dive.Graphics.Textures as Textures
 import GHC.Exts
-import Game hiding (Wall)
+import Game
 import Graphics.GLUtil (simpleShaderProgram, bufferIndices, drawIndexedTris, program, withTextures2D)
 import Graphics.GLUtil.VertexArrayObjects (makeVAO, withVAO)
-import Graphics.Rendering.OpenGL
+import Graphics.Rendering.OpenGL hiding (position, Position)
 import Graphics.UI.GLFW as GLFW
 import Graphics.VinylGL
 import Linear (V2(..))
 import Paths_dive_hs (getDataFileName)
 import qualified Dive.Graphics.Window as Window
 
-data Drawable = Drawable Int Int Representation
+data Drawable = Drawable Position Textures.Representation
 
-representation :: Drawable -> Representation
-representation (Drawable _ _ r) = r
+representation :: Drawable -> Textures.Representation
+representation (Drawable _ r) = r
 
 type Pos = '("vertexCoord", V2 GLfloat)
 type Tex = '("texCoord", V2 GLfloat)
@@ -66,7 +66,7 @@ display window stateRef stateRenderer = do
 
 render :: (Drawable -> [V2 GLfloat]) -> IO (State -> IO ())
 render tiler = do
-  pickTexture   <- loadTextures
+  pickTexture   <- Textures.loadTextures
   vertexPath    <- getDataFileName "src/shaders/tile.vert"
   fragmentPath  <- getDataFileName "src/shaders/tile.frag"
   shaderProgram <- simpleShaderProgram vertexPath fragmentPath
@@ -85,16 +85,10 @@ render tiler = do
       withVAO vertexVAO . withTextures2D [pickTexture $ representation d] $ drawIndexedTris (fromIntegral numVertices)
 
 drawables :: State -> [Drawable]
-drawables state = charDrawable : mobDrawables ++ wallDrawables
-  where charDrawable = Drawable characterX characterY Dude
-        Character characterX characterY = character state
-        mobDrawables = map mobDrawable (getMobs state)
-        mobDrawable (Mob x y _) = Drawable x y Devil
-        wallDrawables = map wallDrawable (getWalls state)
-        wallDrawable (x, y) = Drawable x y Wall
+drawables state = drawable (character state) : map drawable (getMobs state) ++ map drawable (getWalls state)
 
 tile :: Int -> Int -> Drawable -> [V2 GLfloat]
-tile tilesX tilesY (Drawable x y _) =
+tile tilesX tilesY (Drawable (Position (x, y)) _) =
   V2 <$> [x1, x2] <*> [y1, y2]
   where x1 = 2 * (fromIntegral x / fromIntegral tilesX) - 1
         x2 = 2 * (fromIntegral (x + 1) / fromIntegral tilesX) - 1
@@ -107,3 +101,18 @@ tileTex = foldMap (flip (zipWith (<+>)) (cycle coords) . map (pos =:))
 
 lightGray :: Color4 GLfloat
 lightGray = Color4 0.2 0.2 0.2 1
+
+class Positioned a => ConvertsToDrawable a where
+  drawableRepresentation :: a -> Textures.Representation
+
+instance ConvertsToDrawable Character where
+  drawableRepresentation _ = Textures.Dude
+
+instance ConvertsToDrawable Mob where
+  drawableRepresentation _ = Textures.Devil
+
+instance ConvertsToDrawable Wall where
+  drawableRepresentation _ = Textures.Wall
+
+drawable :: ConvertsToDrawable a => a -> Drawable
+drawable x = Drawable (position x) (drawableRepresentation x)

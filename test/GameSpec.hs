@@ -22,6 +22,13 @@ spec = describe "Game" $ do
 
   describe "walls" $ do
     it "lists added walls" $
-      (initialState |> addWall (mkPosition 10 11) |> getWalls) `shouldBe` [(10, 11)]
+      (initialState |> addWall (mkPosition 10 11) |> getWalls |> map position) `shouldBe` [mkPosition 10 11]
     it "blocks movement into walls" $
-      (initialState |> placeCharacter (mkPosition 10 10) |> addWall (mkPosition 10 11) |> updateState Key'Up |> character |> position) `shouldBe` mkPosition 10 10
+      (
+        initialState
+          |> placeCharacter (mkPosition 10 10)
+          |> addWall (mkPosition 10 11)
+          |> updateState Key'Up
+          |> character
+          |> position
+      ) `shouldBe` mkPosition 10 10

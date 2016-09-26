@@ -4,8 +4,8 @@ module Game where
 
 import Graphics.UI.GLFW (Key(..))
 
-data Character = Character Int Int
-  deriving (Show)
+newtype Character = Character Position
+  deriving (Show, Positioned)
 
 newtype Mobs = Mobs [Mob]
   deriving (Show)
@@ -33,14 +33,14 @@ newtype Position = Position { rawPosition :: (Int, Int) }
 class Positioned a where
   position :: a -> Position
 
-instance Positioned Character where
-  position (Character x y) = Position (x, y)
-
 instance Positioned Position where
   position = id
 
+instance Positioned Mob where
+  position (Mob x y _) = Position (x, y)
+
 initialState :: State
-initialState = State (Character 0 0) (Mobs [Mob 10 10 Alive]) (Walls [])
+initialState = State (Character $ mkPosition 0 0) (Mobs [Mob 10 10 Alive]) (Walls [])
 
 updateState :: Key -> State -> State
 updateState key state =
@@ -51,23 +51,24 @@ valid :: State -> Bool
 valid state = all (\w -> position w /= position (character state)) (rawWalls $ walls state)
 
 placeCharacter :: Position -> State -> State
-placeCharacter (Position (x', y')) state = state { character = Character x' y' }
+placeCharacter p s = s { character = Character p }
 
 getMobs :: State -> [Mob]
 getMobs State { mobs = Mobs ms } = ms
 
-getWalls :: State -> [(Int, Int)]
-getWalls = fmap (rawPosition . position) . rawWalls . walls
+getWalls :: State -> [Wall]
+getWalls = rawWalls . walls
 
 nextState :: GameTime -> State -> State
 nextState _time state = state
 
 applyAction :: Key -> State -> (GameTime, State)
-applyAction Key'Up state@State{character = (Character x y)} = (GameTime 0, state{character = Character x (y + 1)})
-applyAction Key'Down state@State{character = (Character x y)} = (GameTime 0, state{character = Character x (y - 1)})
-applyAction Key'Left state@State{character = (Character x y)} = (GameTime 0, state{character = Character (x - 1) y})
-applyAction Key'Right state@State{character = (Character x y)} = (GameTime 0, state{character = Character (x + 1) y})
-applyAction _ x = (GameTime 0, x)
+applyAction k s = (GameTime 0, s { character = Character (move k . position . character $ s) })
+  where move Key'Up (Position (x, y)) = Position (x, y + 1)
+        move Key'Down (Position (x, y)) = Position (x, y - 1)
+        move Key'Left (Position (x, y)) = Position (x - 1, y)
+        move Key'Right (Position (x, y)) = Position (x + 1, y)
+        move _ p = p
 
 mkPosition :: Int -> Int -> Position
 mkPosition x y = Position (x, y)
