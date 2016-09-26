@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Game where
 
 import Graphics.UI.GLFW (Key(..))
@@ -19,6 +21,15 @@ data State = State { character :: Character, mobs :: Mobs }
 
 newtype GameTime = GameTime Int
 
+newtype Position = Position (Int, Int)
+  deriving (Eq, Show)
+
+class Positioned a where
+  position :: a -> Position
+
+instance Positioned Character where
+  position (Character x y) = Position (x, y)
+
 initialState :: State
 initialState = State (Character 0 0) (Mobs [Mob 10 10 Alive])
 
@@ -29,6 +40,9 @@ updateState key state =
 
 getCharacter :: State -> Character
 getCharacter State { character } = character
+
+placeCharacter :: Position -> State -> State
+placeCharacter (Position (x', y')) state@State { character = (Character x y) } = state{ character = (Character x' y') }
 
 getMobs :: State -> [Mob]
 getMobs State { mobs = Mobs ms } = ms
@@ -45,3 +59,6 @@ applyAction Key'Down state@State{character = (Character x y)} = (GameTime 0, sta
 applyAction Key'Left state@State{character = (Character x y)} = (GameTime 0, state{character = Character (x - 1) y})
 applyAction Key'Right state@State{character = (Character x y)} = (GameTime 0, state{character = Character (x + 1) y})
 applyAction _ x = (GameTime 0, x)
+
+mkPosition :: Int -> Int -> Position
+mkPosition x y = Position (x, y)
