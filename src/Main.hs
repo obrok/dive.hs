@@ -3,7 +3,7 @@ import Data.IORef
 import Data.Vinyl
 import Dive.Graphics.Textures
 import GHC.Exts
-import Game
+import Game hiding (Wall)
 import Graphics.GLUtil (simpleShaderProgram, bufferIndices, drawIndexedTris, program, withTextures2D)
 import Graphics.GLUtil.VertexArrayObjects (makeVAO, withVAO)
 import Graphics.Rendering.OpenGL
@@ -38,7 +38,7 @@ main = do
   blend $= Enabled
   blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
 
-  state <- newIORef initialState
+  state <- newIORef (initialState |> addWall (mkPosition 10 11) |> addWall (mkPosition 20 20))
   setKeyCallback window $ Just (input state)
   mainLoop window state stateRenderer
 
