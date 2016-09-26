@@ -42,7 +42,7 @@ getCharacter :: State -> Character
 getCharacter State { character } = character
 
 placeCharacter :: Position -> State -> State
-placeCharacter (Position (x', y')) state@State { character = (Character x y) } = state{ character = (Character x' y') }
+placeCharacter (Position (x', y')) state = state{ character = Character x' y' }
 
 getMobs :: State -> [Mob]
 getMobs State { mobs = Mobs ms } = ms

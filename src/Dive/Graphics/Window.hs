@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module Dive.Graphics.Window where
 
 import Graphics.UI.GLFW as GLFW
