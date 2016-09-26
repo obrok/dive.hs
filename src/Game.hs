@@ -50,9 +50,6 @@ updateState key state =
 valid :: State -> Bool
 valid state = all (\w -> position w /= position (character state)) (rawWalls $ walls state)
 
-getCharacter :: State -> Character
-getCharacter State { character } = character
-
 placeCharacter :: Position -> State -> State
 placeCharacter (Position (x', y')) state = state { character = Character x' y' }
 

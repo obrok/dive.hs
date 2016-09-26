@@ -87,7 +87,7 @@ render tiler = do
 drawables :: State -> [Drawable]
 drawables state = charDrawable : mobDrawables ++ wallDrawables
   where charDrawable = Drawable characterX characterY Dude
-        Character characterX characterY = getCharacter state
+        Character characterX characterY = character state
         mobDrawables = map mobDrawable (getMobs state)
         mobDrawable (Mob x y _) = Drawable x y Devil
         wallDrawables = map wallDrawable (getWalls state)
