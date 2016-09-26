@@ -16,8 +16,8 @@ newtype Walls = Walls { rawWalls :: [Wall] }
 newtype Wall = Wall Position
   deriving (Show, Positioned)
 
-data Mob = Mob Int Int Status
-  deriving (Show)
+newtype Mob = Mob Position
+  deriving (Show, Positioned)
 
 data Status = Alive | Dead
   deriving (Show)
@@ -36,11 +36,8 @@ class Positioned a where
 instance Positioned Position where
   position = id
 
-instance Positioned Mob where
-  position (Mob x y _) = Position (x, y)
-
 initialState :: State
-initialState = State (Character $ mkPosition 0 0) (Mobs [Mob 10 10 Alive]) (Walls [])
+initialState = State (Character $ mkPosition 0 0) (Mobs [Mob $ mkPosition 10 10]) (Walls [])
 
 updateState :: Key -> State -> State
 updateState key state =
