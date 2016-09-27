@@ -19,9 +19,6 @@ newtype Wall = Wall Position
 newtype Mob = Mob Position
   deriving (Show, Positioned)
 
-data Status = Alive | Dead
-  deriving (Show)
-
 data State = State { character :: Character, mobs :: Mobs, walls :: Walls }
   deriving (Show)
 
